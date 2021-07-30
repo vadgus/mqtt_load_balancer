@@ -15,7 +15,7 @@ STOP = asyncio.Event()
 
 def on_connect(client, flags, rc, properties):
     print('Connected')
-    client.subscribe('TEST/#', qos=0)
+    client.subscribe('debug/#', qos=0)
 
 
 def on_message(client, topic, payload, qos, properties):
@@ -34,7 +34,10 @@ def ask_exit(*args):
     STOP.set()
 
 
-async def main(config):
+async def main():
+    config = ConfigParser()
+    config.read('.env')
+
     worker_index = ''
     args = sys.argv[1:]
     for arg in args:
@@ -64,12 +67,7 @@ async def main(config):
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
 
-    host = 'mqtt.flespi.io'
-
-    config = ConfigParser()
-    config.read('.env')
-
     loop.add_signal_handler(signal.SIGINT, ask_exit)
     loop.add_signal_handler(signal.SIGTERM, ask_exit)
 
-    loop.run_until_complete(main(config))
+    loop.run_until_complete(main())
