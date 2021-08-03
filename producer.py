@@ -1,35 +1,36 @@
-import random
-import time
-import asyncio
-
-from gmqtt import Client as MQTTClient
+from time import time
+from random import randint
 from configparser import ConfigParser
+from asyncio import get_event_loop, ensure_future
+
+from gmqtt import Client
 
 
-async def main():
-    config = ConfigParser()
-    config.read('.env')
-
-    client = MQTTClient('producer')
+async def main(config: ConfigParser):
+    client = Client('producer')
     client.set_auth_credentials(config.get('FLESPI', 'TOKEN'), None)
     await client.connect(config.get('FLESPI', 'HOST'))
 
     c = 0
-    t = time.time()
-    messages_per_sec = int(config.get('PRODUCER', 'MESSAGES_PER_SEC') or 1)
+    t = time()
+    messages_per_sec = int(config.get('PRODUCER', 'MESSAGES_PER_SEC')) or 1
 
     while True:
         if c >= messages_per_sec:
-            if time.time() - t >= 1:
-                t = time.time()
+            if time() - t >= 1:
+                t = time()
                 c = 0
             continue
 
-        item_id = random.randint(1, 2000000)
-        client.publish(f'debug/balancer/{item_id}', str(time.time()))
+        item_id = randint(1, 2000000)
+        client.publish(f'debug/balancer/{item_id}', str(time()))
         c += 1
 
 
-loop = asyncio.get_event_loop()
-future = asyncio.ensure_future(main())
-loop.run_until_complete(future)
+if __name__ == '__main__':
+    config = ConfigParser()
+    config.read('.env')
+
+    loop = get_event_loop()
+    future = ensure_future(main(config))
+    loop.run_until_complete(future)
