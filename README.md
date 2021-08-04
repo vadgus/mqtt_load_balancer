@@ -1,4 +1,4 @@
-# load_balancer
+# mqtt load balancer
 
 balancer.py runs several worker.py processes using balancer.ini config
 

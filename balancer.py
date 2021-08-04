@@ -1,5 +1,7 @@
 import asyncio
 import signal
+import time
+
 import uvloop
 
 from configparser import ConfigParser
@@ -9,6 +11,8 @@ asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 MQTT_STOP = asyncio.Event()
 worker_index = 0
+worker_index_map = {}
+worker_index_map_show = False
 
 
 def on_connect(client, flags, rc, properties):
@@ -16,25 +20,32 @@ def on_connect(client, flags, rc, properties):
 
 
 def on_message(client, topic, payload, qos, properties):
+    global worker_index_map_show
+
     index = get_worker_index(topic)
-    client.publish(f'debug/worker/{index}', payload)
+
+    if int(time.time()) % 5 == 0:
+        if not worker_index_map_show:
+            print(worker_index_map)
+            worker_index_map_show = True
+    else:
+        worker_index_map_show = False
+
+    client.publish(f'debug/worker/{index}', payload, qos)
 
 
 def ask_exit(*args):
     MQTT_STOP.set()
 
 
-def hashval(str, size):
-    value = 0
-    for x in str:
-        value += (ord(x))
-    return value % size
+def get_worker_index(topic: str) -> int:
+    global worker_index, worker_index_map
+    worker_index = 1 + hash(topic) % 5
 
+    if not worker_index_map.get(worker_index):
+        worker_index_map[worker_index] = 0
+    worker_index_map[worker_index] += 1
 
-def get_worker_index(topic) -> int:
-    global worker_index
-    worker_index = hashval(topic, 5) + 1
-    print(topic, worker_index)
     return worker_index
 
 
@@ -45,7 +56,6 @@ async def main(config: ConfigParser):
     client.set_auth_credentials(config.get('FLESPI', 'TOKEN'), None)
 
     await client.connect(config.get('FLESPI', 'HOST'))
-
     await MQTT_STOP.wait()
     await client.disconnect()
 

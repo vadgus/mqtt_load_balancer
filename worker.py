@@ -1,4 +1,5 @@
 import asyncio
+import json
 import sys
 import signal
 import uvloop
@@ -17,7 +18,8 @@ def on_connect(client, flags, rc, properties):
 
 
 def on_message(client, topic, payload, qos, properties):
-    print(worker_index, topic, str(payload))
+    # print(f'worker {worker_index}: ' + str(json.loads(payload)))
+    pass
 
 
 def ask_exit(*args):
@@ -35,7 +37,7 @@ async def main(config: ConfigParser):
         ask_exit()
         raise Exception("process argument '--index=' invalid")
 
-    client = MQTTClient(f'client_id_{worker_index}')
+    client = MQTTClient(f'worker {worker_index}')
     client.on_connect = on_connect
     client.on_message = on_message
 
