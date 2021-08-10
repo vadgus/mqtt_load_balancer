@@ -1,6 +1,6 @@
 # mqtt load balancer
 
-balancer.py runs several worker.py processes using balancer.ini config
+server.py runs balancer.py and several worker.py processes (using server.ini config)
 
 ### Setup env
 
